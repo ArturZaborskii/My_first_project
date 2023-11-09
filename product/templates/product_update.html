@@ -1,0 +1,8 @@
+{%extends 'base.html'%}
+{%block update_product%}
+<form action="{%url 'updete_product' product.pk%}" method="post">
+  {%csrf_token%}
+  {{form.as_p}}
+  <button type="submit">Обновить</button>
+</form>
+{%endblock%}
