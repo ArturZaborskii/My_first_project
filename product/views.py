@@ -1,13 +1,9 @@
 from django.shortcuts import render, redirect
 
-from .forms import ProductForm
+from .forms import ProductForm, ProductImageForm
 
 from django.views.generic import (
-    ListView,
     View,
-    DetailView,
-    DeleteView,
-    UpdateView
 )
 
 from .models import Product
@@ -44,6 +40,7 @@ class DeleteProductView(View):
 class UpdeteProductView(View):
     def get(self, request, *args, **kwargs):
         product = Product.objects.get(id=kwargs['pk'])
+        image_product_obj = product.prod_img.all()[0]
         product_form = ProductForm(
             initial={
                 'name': product.name,
@@ -51,33 +48,59 @@ class UpdeteProductView(View):
                 'price': product.price
             }
         )
+        product_form_img = ProductImageForm(
+            initial={
+                'img': image_product_obj.img
+            }
+        )
         context = {
             'form': product_form,
-            'product': product
+            'product': product,
+            'image_product_form': product_form_img
         }
         return render(request, 'product_update.html', context)
-    
+
     def post(self, request, *args, **kwargs):
         product = Product.objects.get(id=kwargs['pk'])
-        product_form = ProductForm(request.POST)
+        product_form = ProductForm(request.POST, request.FILES)
+        product_form_img = ProductImageForm(request.POST, request.FILES)
+        image_product_obj = product.prod_img.all()[0]
         if product_form.is_valid():
             product.name = product_form.cleaned_data['name']
             product.description = product_form.cleaned_data['description']
             product.price = product_form.cleaned_data['price']
             product.save()
-            return redirect('home')
+            if product_form_img.is_valid():
+                image_product_obj.img = product_form_img.cleaned_data['img']
+                image_product_obj.save()
+                return redirect('home')
+
 
 
 class CreateProduct(View):
     def get(self, request):
         product_form = ProductForm()
+        product_form_img = ProductImageForm()
+        # данные которые передаются в шаблон с помощью словаря
         context = {
-            'form': product_form
+            'form': product_form,
+            'form_img': product_form_img
         }
         return render(request, 'create_product.html', context)
 
     def post(self, request, *args, **kwargs):
-        product_form = ProductForm(request.POST)
+        product_form = ProductForm(request.POST, request.FILES)
+        product_form_img = ProductImageForm(request.POST, request.FILES)
         if product_form.is_valid():
-            product_form.save()
-            return redirect('home')
+            # save preproduct
+            prod_obj = product_form.save(commit=False)
+            prod_obj.name = product_form.cleaned_data['name']
+            prod_obj.description = product_form.cleaned_data['description']
+            prod_obj.price = product_form.cleaned_data['price']
+            prod_obj.save()
+            if product_form_img.is_valid():
+                product_obj_img = product_form_img.save(commit=False)
+                product_obj_img.img = product_form_img.cleaned_data['img']
+                product_obj_img.product_obj = prod_obj
+                product_obj_img.save()
+                return redirect('home')

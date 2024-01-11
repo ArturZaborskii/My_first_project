@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
     PermissionsMixin
 )
 
+
 class UserManager(BaseUserManager):
     def create_user(self, username, email, password=None):
         if not username:
@@ -48,7 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=True
     )
     is_staff = models.BooleanField(
-        verbose_name='Является алмином',
+        verbose_name='Является админом',
         default=False
     )
     created_at = models.DateTimeField(
@@ -63,7 +64,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
     objects = UserManager()
-
 
     def __str__(self):
         return self.username
